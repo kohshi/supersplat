@@ -2,9 +2,21 @@ import { Vec3 } from 'playcanvas';
 
 import { Camera } from './camera';
 
+const calcForwardVec = (result: Vec3, azim: number, elev: number) => {
+    const math = { DEG_TO_RAD: Math.PI / 180 };
+    const ex = elev * math.DEG_TO_RAD;
+    const ey = azim * math.DEG_TO_RAD;
+    const s1 = Math.sin(-ex);
+    const c1 = Math.cos(-ex);
+    const s2 = Math.sin(-ey);
+    const c2 = Math.cos(-ey);
+    result.set(-c1 * s2, s1, c1 * c2);
+};
+
 const fromWorldPoint = new Vec3();
 const toWorldPoint = new Vec3();
 const worldDiff = new Vec3();
+const forwardVec = new Vec3();
 
 // calculate the distance between two 2d points
 const dist = (x0: number, y0: number, x1: number, y1: number) => Math.sqrt((x1 - x0) ** 2 + (y1 - y0) ** 2);
@@ -19,6 +31,20 @@ class PointerController {
             const azim = camera.azim - dx * camera.scene.config.controls.orbitSensitivity;
             const elev = camera.elevation - dy * camera.scene.config.controls.orbitSensitivity;
             camera.setAzimElev(azim, elev);
+        };
+
+        const lookAround = (dx: number, dy: number) => {
+            const currentCameraPos = camera.entity.getPosition().clone();
+            
+            const azim = camera.azim - dx * camera.scene.config.controls.orbitSensitivity;
+            const elev = camera.elevation - dy * camera.scene.config.controls.orbitSensitivity;
+            
+            const distance = camera.distance * camera.sceneRadius / camera.fovFactor;
+            calcForwardVec(forwardVec, azim, elev);
+            const newFocalPoint = currentCameraPos.clone().sub(forwardVec.clone().mulScalar(distance));
+            
+            camera.setAzimElev(azim, elev);
+            camera.setFocalPoint(newFocalPoint);
         };
 
         const pan = (x: number, y: number, dx: number, dy: number) => {
@@ -95,18 +121,15 @@ class PointerController {
                 x = event.offsetX;
                 y = event.offsetY;
 
-                // right button can be used to orbit with ctrl key and to zoom with alt | meta key
-                const mod = buttons[2] ?
-                    (event.shiftKey || event.ctrlKey ? 'orbit' :
-                        (event.altKey || event.metaKey ? 'zoom' : null)) :
-                    null;
+                // right button is used for look around (rotation around camera position)
+                const mod = buttons[2] ? 'lookAround' : null;
 
-                if (mod === 'orbit' || (mod === null && buttons[0])) {
+                if (mod === 'lookAround') {
+                    lookAround(dx, dy);
+                } else if (mod === null && buttons[0]) {
                     orbit(dx, dy);
-                } else if (mod === 'zoom' || (mod === null && buttons[1])) {
+                } else if (mod === null && buttons[1]) {
                     zoom(dy * -0.02);
-                } else if (mod === 'pan' || (mod === null && buttons[2])) {
-                    pan(x, y, dx, dy);
                 }
             } else {
                 if (touches.length === 1) {
@@ -169,10 +192,16 @@ class PointerController {
 
         // key state
         const keys: any = {
-            ArrowUp: 0,
-            ArrowDown: 0,
-            ArrowLeft: 0,
-            ArrowRight: 0
+            w: 0,
+            W: 0,
+            a: 0,
+            A: 0,
+            s: 0,
+            S: 0,
+            d: 0,
+            D: 0,
+            Shift: 0,
+            ' ': 0  // Space key
         };
 
         const keydown = (event: KeyboardEvent) => {
@@ -188,15 +217,17 @@ class PointerController {
         };
 
         this.update = (deltaTime: number) => {
-            const x = keys.ArrowRight - keys.ArrowLeft;
-            const z = keys.ArrowDown - keys.ArrowUp;
+            const x = (keys.d || keys.D) - (keys.a || keys.A);  // right - left
+            const z = (keys.s || keys.S) - (keys.w || keys.W);  // backward - forward
+            const y = keys[' '] - keys.Shift;  // up - down
 
-            if (x || z) {
+            if (x || z || y) {
                 const factor = deltaTime * camera.flySpeed;
                 const worldTransform = camera.entity.getWorldTransform();
                 const xAxis = worldTransform.getX().mulScalar(x * factor);
                 const zAxis = worldTransform.getZ().mulScalar(z * factor);
-                const p = camera.focalPoint.add(xAxis).add(zAxis);
+                const yAxis = worldTransform.getY().mulScalar(y * factor);
+                const p = camera.focalPoint.add(xAxis).add(zAxis).add(yAxis);
                 camera.setFocalPoint(p);
             }
         };

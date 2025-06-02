@@ -82,8 +82,7 @@ const initShortcuts = (events: Events) => {
     shortcuts.register(['P', 'p'], { event: 'tool.polygonSelection', sticky: true });
     shortcuts.register(['L', 'l'], { event: 'tool.lassoSelection', sticky: true });
     shortcuts.register(['B', 'b'], { event: 'tool.brushSelection', sticky: true });
-    shortcuts.register(['A', 'a'], { event: 'select.all', ctrl: true });
-    shortcuts.register(['A', 'a'], { event: 'select.none', shift: true });
+
     shortcuts.register(['I', 'i'], { event: 'select.invert', ctrl: true });
     shortcuts.register(['H', 'h'], { event: 'select.hide' });
     shortcuts.register(['U', 'u'], { event: 'select.unhide' });
@@ -92,8 +91,8 @@ const initShortcuts = (events: Events) => {
     shortcuts.register(['Z', 'z'], { event: 'edit.undo', ctrl: true, capture: true });
     shortcuts.register(['Z', 'z'], { event: 'edit.redo', ctrl: true, shift: true, capture: true });
     shortcuts.register(['M', 'm'], { event: 'camera.toggleMode' });
-    shortcuts.register(['D', 'd'], { event: 'dataPanel.toggle' });
-    shortcuts.register([' '], { event: 'camera.toggleOverlay' });
+
+
 
     return shortcuts;
 };
