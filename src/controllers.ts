@@ -172,7 +172,11 @@ class PointerController {
             ArrowUp: 0,
             ArrowDown: 0,
             ArrowLeft: 0,
-            ArrowRight: 0
+            ArrowRight: 0,
+            q: 0,
+            Q: 0,
+            e: 0,
+            E: 0
         };
 
         const keydown = (event: KeyboardEvent) => {
@@ -198,6 +202,13 @@ class PointerController {
                 const zAxis = worldTransform.getZ().mulScalar(z * factor);
                 const p = camera.focalPoint.add(xAxis).add(zAxis);
                 camera.setFocalPoint(p);
+            }
+
+            const rollInput = (keys.e || keys.E) - (keys.q || keys.Q);
+            if (rollInput) {
+                const rollSpeed = 90; // degrees per second
+                const rollDelta = rollInput * rollSpeed * deltaTime;
+                camera.setRoll(camera.roll + rollDelta);
             }
         };
 
