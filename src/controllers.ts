@@ -237,7 +237,7 @@ class PointerController {
 
             const rollInput = (keys.e || keys.E) - (keys.q || keys.Q);
             if (rollInput) {
-                const rollSpeed = 90; // degrees per second
+                const rollSpeed = 60; // degrees per second
                 const rollDelta = rollInput * rollSpeed * deltaTime;
                 camera.setRoll(camera.roll + rollDelta);
             }

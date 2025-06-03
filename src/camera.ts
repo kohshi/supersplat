@@ -46,7 +46,6 @@ const calcForwardVec = (result: Vec3, azim: number, elev: number) => {
 const forwardVec = new Vec3();
 const cameraPosition = new Vec3();
 const baseQuat = new Quat();
-const rollQuat = new Quat();
 const plane = new Plane();
 const ray = new Ray();
 const vec = new Vec3();
@@ -465,11 +464,9 @@ class Camera extends Element {
         // Create base rotation from azimuth and elevation
         baseQuat.setFromEulerAngles(azimElev.elev, azimElev.azim, 0);
         
-        rollQuat.setFromAxisAngle(forwardVec, roll.roll * math.DEG_TO_RAD);
-        
         // Combine rotations: apply roll on top of base orientation
-        baseQuat.mul(rollQuat);
         this.entity.setLocalRotation(baseQuat);
+        this.entity.rotateLocal(0, 0, roll.roll)
 
         this.fitClippingPlanes(this.entity.getLocalPosition(), this.entity.forward);
 
