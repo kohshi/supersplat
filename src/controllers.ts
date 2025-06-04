@@ -205,7 +205,11 @@ class PointerController {
             q: 0,
             Q: 0,
             e: 0,
-            E: 0
+            E: 0,
+            ArrowUp: 0,
+            ArrowDown: 0,
+            ArrowLeft: 0,
+            ArrowRight: 0
         };
 
         const keydown = (event: KeyboardEvent) => {
@@ -223,8 +227,7 @@ class PointerController {
         this.update = (deltaTime: number) => {
             const x = (keys.d || keys.D) - (keys.a || keys.A);  // right - left
             const z = (keys.s || keys.S) - (keys.w || keys.W);  // backward - forward
-            const y = keys[' '] - keys.Shift;  // up - down
-
+            const y = keys[' '] - (keys.Shift / 10);  // up - down
             if (x || z || y) {
                 const factor = deltaTime * camera.flySpeed;
                 const worldTransform = camera.entity.getWorldTransform();
@@ -237,9 +240,18 @@ class PointerController {
 
             const rollInput = (keys.e || keys.E) - (keys.q || keys.Q);
             if (rollInput) {
-                const rollSpeed = 60; // degrees per second
+                const rollSpeed = 90; // degrees per second
                 const rollDelta = rollInput * rollSpeed * deltaTime;
                 camera.setRoll(camera.roll + rollDelta);
+            }
+            const yawInput = keys.ArrowRight - keys.ArrowLeft;
+            const pitchInput = keys.ArrowDown - keys.ArrowUp;
+            if (yawInput || pitchInput) {
+                const yawSpeed = 90; // degrees per second
+                const pitchSpeed = 90; // degrees per second
+                const yawDelta = yawInput * yawSpeed * deltaTime;
+                const pitchDelta = pitchInput * pitchSpeed * deltaTime;
+                lookAround(yawDelta, pitchDelta);
             }
         };
 
