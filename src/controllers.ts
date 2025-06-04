@@ -215,7 +215,7 @@ class PointerController {
         };
 
         const keyup = (event: KeyboardEvent) => {
-            if (keys.hasOwnProperty(event.key)) {
+            if (keys.hasOwnProperty(event.key) && event.target === document.body) {
                 keys[event.key] = 0;
             }
         };
