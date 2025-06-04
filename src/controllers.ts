@@ -201,7 +201,15 @@ class PointerController {
             d: 0,
             D: 0,
             Shift: 0,
-            ' ': 0  // Space key
+            ' ': 0,  // Space key
+            q: 0,
+            Q: 0,
+            e: 0,
+            E: 0,
+            ArrowUp: 0,
+            ArrowDown: 0,
+            ArrowLeft: 0,
+            ArrowRight: 0
         };
 
         const keydown = (event: KeyboardEvent) => {
@@ -211,7 +219,7 @@ class PointerController {
         };
 
         const keyup = (event: KeyboardEvent) => {
-            if (keys.hasOwnProperty(event.key)) {
+            if (keys.hasOwnProperty(event.key) && event.target === document.body) {
                 keys[event.key] = 0;
             }
         };
@@ -219,8 +227,7 @@ class PointerController {
         this.update = (deltaTime: number) => {
             const x = (keys.d || keys.D) - (keys.a || keys.A);  // right - left
             const z = (keys.s || keys.S) - (keys.w || keys.W);  // backward - forward
-            const y = keys[' '] - keys.Shift;  // up - down
-
+            const y = keys[' '] - (keys.Shift / 10);  // up - down
             if (x || z || y) {
                 const factor = deltaTime * camera.flySpeed;
                 const worldTransform = camera.entity.getWorldTransform();
@@ -229,6 +236,22 @@ class PointerController {
                 const yAxis = worldTransform.getY().mulScalar(y * factor);
                 const p = camera.focalPoint.add(xAxis).add(zAxis).add(yAxis);
                 camera.setFocalPoint(p);
+            }
+
+            const rollInput = (keys.e || keys.E) - (keys.q || keys.Q);
+            if (rollInput) {
+                const rollSpeed = 90; // degrees per second
+                const rollDelta = rollInput * rollSpeed * deltaTime;
+                camera.setRoll(camera.roll + rollDelta);
+            }
+            const yawInput = keys.ArrowRight - keys.ArrowLeft;
+            const pitchInput = keys.ArrowDown - keys.ArrowUp;
+            if (yawInput || pitchInput) {
+                const yawSpeed = 90; // degrees per second
+                const pitchSpeed = 90; // degrees per second
+                const yawDelta = yawInput * yawSpeed * deltaTime;
+                const pitchDelta = pitchInput * pitchSpeed * deltaTime;
+                lookAround(yawDelta, pitchDelta);
             }
         };
 

@@ -17,6 +17,7 @@ import {
     Entity,
     Picker,
     Plane,
+    Quat,
     Ray,
     RenderTarget,
     Texture,
@@ -44,6 +45,7 @@ const calcForwardVec = (result: Vec3, azim: number, elev: number) => {
 // work globals
 const forwardVec = new Vec3();
 const cameraPosition = new Vec3();
+const baseQuat = new Quat();
 const plane = new Plane();
 const ray = new Ray();
 const vec = new Vec3();
@@ -58,6 +60,7 @@ class Camera extends Element {
     entity: Entity;
     focalPointTween = new TweenValue({ x: 0, y: 0.5, z: 0 });
     azimElevTween = new TweenValue({ azim: 30, elev: -15 });
+    rollTween = new TweenValue({ roll: 0 });
     distanceTween = new TweenValue({ distance: 1 });
 
     minElev = -90;
@@ -186,6 +189,10 @@ class Camera extends Element {
         return this.distanceTween.target.distance;
     }
 
+    get roll() {
+        return this.rollTween.target.roll;
+    }
+
     setFocalPoint(point: Vec3, dampingFactorFactor: number = 1) {
         this.focalPointTween.goto(point, dampingFactorFactor * this.scene.config.controls.dampingFactor);
     }
@@ -217,6 +224,20 @@ class Camera extends Element {
 
         const t = this.distanceTween;
         t.goto({ distance }, dampingFactorFactor * controls.dampingFactor);
+    }
+
+    setRoll(roll: number, dampingFactorFactor: number = 1) {
+        roll = mod(roll, 360);
+
+        const t = this.rollTween;
+        t.goto({ roll }, dampingFactorFactor * this.scene.config.controls.dampingFactor);
+
+        // handle wraparound
+        if (t.source.roll - roll < -180) {
+            t.source.roll += 360;
+        } else if (t.source.roll - roll > 180) {
+            t.source.roll -= 360;
+        }
     }
 
     setPose(position: Vec3, target: Vec3, dampingFactorFactor: number = 1) {
@@ -426,9 +447,11 @@ class Camera extends Element {
         // update underlying values
         this.focalPointTween.update(deltaTime);
         this.azimElevTween.update(deltaTime);
+        this.rollTween.update(deltaTime);
         this.distanceTween.update(deltaTime);
 
         const azimElev = this.azimElevTween.value;
+        const roll = this.rollTween.value;
         const distance = this.distanceTween.value;
 
         calcForwardVec(forwardVec, azimElev.azim, azimElev.elev);
@@ -437,7 +460,13 @@ class Camera extends Element {
         cameraPosition.add(this.focalPointTween.value);
 
         this.entity.setLocalPosition(cameraPosition);
-        this.entity.setLocalEulerAngles(azimElev.elev, azimElev.azim, 0);
+        
+        // Create base rotation from azimuth and elevation
+        baseQuat.setFromEulerAngles(azimElev.elev, azimElev.azim, 0);
+        
+        // Combine rotations: apply roll on top of base orientation
+        this.entity.setLocalRotation(baseQuat);
+        this.entity.rotateLocal(0, 0, roll.roll)
 
         this.fitClippingPlanes(this.entity.getLocalPosition(), this.entity.forward);
 
