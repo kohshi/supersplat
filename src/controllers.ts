@@ -45,7 +45,6 @@ class PointerController {
             const yaw = dx * camera.scene.config.controls.orbitSensitivity;
             const pitch = dy * camera.scene.config.controls.orbitSensitivity;
             camera.setAzimElev(azim, elev);
-            // console.log(`constoller yaw delta: ${yaw}, pitch delta: ${pitch}`);
             camera.setYawPitchDelta(yaw, pitch);
             camera.setFocalPoint(newFocalPoint);
         };
@@ -238,7 +237,8 @@ class PointerController {
                 const zAxis = worldTransform.getZ().mulScalar(z * factor);
                 const yAxis = worldTransform.getY().mulScalar(y * factor);
                 const p = camera.focalPoint.add(xAxis).add(zAxis).add(yAxis);
-                camera.setFocalPoint(p);
+                // camera.setFocalPoint(p);
+                camera.setDeltaPosition(new Vec3(x * factor, y * factor, z * factor));
             }
 
             const rollInput = (keys.e || keys.E) - (keys.q || keys.Q);

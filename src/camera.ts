@@ -60,9 +60,10 @@ class Camera extends Element {
     entity: Entity;
     focalPointTween = new TweenValue({ x: 0, y: 0.5, z: 0 });
     azimElevTween = new TweenValue({ azim: 30, elev: -15 });
-    rollTween = new TweenValue({ roll: 0 });
-    yawPitchTween = new TweenValue({ yaw: 0, pitch: 0 });
     distanceTween = new TweenValue({ distance: 1 });
+
+    deltaPosition = new Vec3();
+    deltaRPY = new Vec3();
 
     minElev = -90;
     maxElev = 90;
@@ -213,13 +214,6 @@ class Camera extends Element {
         this.ortho = false;
     }
 
-    setYawPitchDelta(yaw: number, pitch: number, dampingFactorFactor: number = 1) {
-        const t = this.yawPitchTween;
-        t.goto({ yaw, pitch }, dampingFactorFactor * this.scene.config.controls.dampingFactor);
-        t.source.yaw = 0;
-        t.source.pitch = 0;
-    }
-
     setDistance(distance: number, dampingFactorFactor: number = 1) {
         const controls = this.scene.config.controls;
 
@@ -230,10 +224,16 @@ class Camera extends Element {
         t.goto({ distance }, dampingFactorFactor * controls.dampingFactor);
     }
 
+    setDeltaPosition(delta: Vec3, dampingFactorFactor: number = 1) {
+        this.deltaPosition = delta;
+    }
+
+    setYawPitchDelta(yaw: number, pitch: number, dampingFactorFactor: number = 1) {
+        this.deltaRPY = new Vec3(this.deltaRPY.x, pitch, yaw);
+    }
+
     setRollDelta(roll: number, dampingFactorFactor: number = 1) {
-        const t = this.rollTween;
-        t.goto({ roll }, dampingFactorFactor * this.scene.config.controls.dampingFactor);
-        t.source.roll = 0;
+        this.deltaRPY = new Vec3(roll, this.deltaRPY.y, this.deltaRPY.z);
     }
 
     setPose(position: Vec3, target: Vec3, dampingFactorFactor: number = 1) {
@@ -443,8 +443,6 @@ class Camera extends Element {
         // update underlying values
         this.focalPointTween.update(deltaTime);
         this.azimElevTween.update(deltaTime);
-        this.rollTween.update(deltaTime);
-        this.yawPitchTween.update(deltaTime);
         this.distanceTween.update(deltaTime);
 
         // FIXME: drived from camera.rotation after rotateLocal.
@@ -456,13 +454,11 @@ class Camera extends Element {
         cameraPosition.mulScalar(distance.distance * this.sceneRadius / this.fovFactor);
         cameraPosition.add(this.focalPointTween.value);
 
-        this.entity.setLocalPosition(cameraPosition);
+        this.entity.rotateLocal(this.deltaRPY.y, this.deltaRPY.z, this.deltaRPY.x);
+        this.deltaRPY = Vec3.ZERO;
 
-        // Combine rotations
-        const yawDelta = this.yawPitchTween.target.yaw - this.yawPitchTween.value.yaw;
-        const pitchDelta = this.yawPitchTween.target.pitch - this.yawPitchTween.value.pitch;
-        const rollDelta = this.rollTween.target.roll - this.rollTween.value.roll;
-        this.entity.rotateLocal(pitchDelta, yawDelta, rollDelta);
+        this.entity.translateLocal(this.deltaPosition.x, this.deltaPosition.y, this.deltaPosition.z);
+        this.deltaPosition = Vec3.ZERO;
 
         this.fitClippingPlanes(this.entity.getLocalPosition(), this.entity.forward);
 
